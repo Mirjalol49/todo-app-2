@@ -3,6 +3,7 @@ import { isSupabaseConfigured, supabase } from './lib/supabase';
 import { Auth } from './components/Auth';
 import { TodoList } from './components/TodoList';
 import { SetupRequired } from './components/SetupRequired';
+import { GamificationProvider } from './context/GamificationContext';
 import type { Session } from '@supabase/supabase-js';
 
 function App() {
@@ -28,7 +29,13 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {!session ? <Auth /> : <TodoList />}
+      {!session ? (
+        <Auth />
+      ) : (
+        <GamificationProvider>
+          <TodoList />
+        </GamificationProvider>
+      )}
     </div>
   );
 }

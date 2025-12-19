@@ -2,6 +2,9 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { TodoItem } from './TodoItem';
 import { AddTodo } from './AddTodo';
+import { UserStatsCard } from './gamification/UserStatsCard';
+import { AchievementsList } from './gamification/AchievementsList';
+import { useGamification } from '../context/GamificationContext';
 import { Loader2, LogOut } from 'lucide-react';
 import { Button } from './ui/Button';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -20,6 +23,7 @@ export function TodoList() {
     const [todos, setTodos] = useState<Todo[]>([]);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState<FilterType>('all');
+    const { addPointsOptimistic } = useGamification();
 
     useEffect(() => {
         fetchTodos();
@@ -85,6 +89,11 @@ export function TodoList() {
                 );
                 throw error;
             }
+
+            // Optimistic update for instant point feedback
+            if (is_complete) {
+                addPointsOptimistic(50);
+            }
         } catch (error) {
             console.error('Error updating todo:', error);
         }
@@ -126,7 +135,7 @@ export function TodoList() {
     }
 
     return (
-        <div className="mx-auto max-w-2xl px-4 py-12 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
             <div className="mb-8 flex items-center justify-between">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight text-gray-900">
@@ -143,55 +152,67 @@ export function TodoList() {
             </div>
 
             <div className="mb-8">
-                <AddTodo onAdd={addTodo} />
+                <UserStatsCard />
             </div>
 
-            <div className="mb-6 flex gap-2">
-                {(['all', 'active', 'completed'] as FilterType[]).map((f) => (
-                    <button
-                        key={f}
-                        onClick={() => setFilter(f)}
-                        className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${filter === f
-                                ? 'bg-gray-900 text-white'
-                                : 'bg-white text-gray-500 hover:bg-gray-100 hover:text-gray-900'
-                            }`}
-                    >
-                        {f.charAt(0).toUpperCase() + f.slice(1)}
-                    </button>
-                ))}
-            </div>
+            <div className="grid gap-8 lg:grid-cols-3">
+                <div className="lg:col-span-2 space-y-8">
+                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                        <AddTodo onAdd={addTodo} />
+                    </div>
 
-            <motion.div layout className="space-y-3">
-                <AnimatePresence mode="popLayout">
-                    {filteredTodos.map((todo) => (
-                        <TodoItem
-                            key={todo.id}
-                            todo={todo}
-                            onToggle={toggleTodo}
-                            onDelete={deleteTodo}
-                        />
-                    ))}
-                </AnimatePresence>
-                {filteredTodos.length === 0 && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="py-12 text-center"
-                    >
-                        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gray-50">
-                            <CheckCircle className="h-8 w-8 text-gray-300" />
-                        </div>
-                        <h3 className="text-lg font-medium text-gray-900">
-                            No tasks found
-                        </h3>
-                        <p className="mt-1 text-gray-500">
-                            {filter === 'all'
-                                ? "You haven't created any tasks yet."
-                                : `No ${filter} tasks found.`}
-                        </p>
+                    <div className="flex gap-2">
+                        {(['all', 'active', 'completed'] as FilterType[]).map((f) => (
+                            <button
+                                key={f}
+                                onClick={() => setFilter(f)}
+                                className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${filter === f
+                                    ? 'bg-gray-900 text-white'
+                                    : 'bg-white text-gray-500 hover:bg-gray-100 hover:text-gray-900'
+                                    }`}
+                            >
+                                {f.charAt(0).toUpperCase() + f.slice(1)}
+                            </button>
+                        ))}
+                    </div>
+
+                    <motion.div layout className="space-y-3">
+                        <AnimatePresence mode="popLayout">
+                            {filteredTodos.map((todo) => (
+                                <TodoItem
+                                    key={todo.id}
+                                    todo={todo}
+                                    onToggle={toggleTodo}
+                                    onDelete={deleteTodo}
+                                />
+                            ))}
+                        </AnimatePresence>
+                        {filteredTodos.length === 0 && (
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                className="py-12 text-center"
+                            >
+                                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gray-50">
+                                    <CheckCircle className="h-8 w-8 text-gray-300" />
+                                </div>
+                                <h3 className="text-lg font-medium text-gray-900">
+                                    No tasks found
+                                </h3>
+                                <p className="mt-1 text-gray-500">
+                                    {filter === 'all'
+                                        ? "You haven't created any tasks yet."
+                                        : `No ${filter} tasks found.`}
+                                </p>
+                            </motion.div>
+                        )}
                     </motion.div>
-                )}
-            </motion.div>
+                </div>
+
+                <div className="space-y-6">
+                    <AchievementsList />
+                </div>
+            </div>
         </div>
     );
 }
